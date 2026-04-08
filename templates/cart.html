@@ -1,0 +1,67 @@
+{% extends 'base.html' %}
+{% block title %}Корзина{% endblock %}
+
+{% block content %}
+  <div class="d-flex justify-content-between align-items-center mb-3">
+    <h1 class="h3 mb-0">Корзина</h1>
+    <a class="btn btn-outline-secondary" href="{% url 'index' %}">Продолжить покупки</a>
+  </div>
+
+  {% if lines %}
+    <div class="card shadow-sm">
+      <div class="table-responsive">
+        <table class="table align-middle mb-0">
+          <thead>
+            <tr>
+              <th>Товар</th>
+              <th class="text-end">Цена</th>
+              <th class="text-end">Кол-во</th>
+              <th class="text-end">Сумма</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for line in lines %}
+              <tr>
+                <td>
+                  <div class="d-flex align-items-center gap-3">
+                    {% if line.product.image %}
+                      <img src="{{ line.product.image.url }}" alt="{{ line.product.name }}" class="thumb" />
+                    {% endif %}
+                    <div>
+                      <div class="fw-semibold">{{ line.product.name }}</div>
+                      <div class="small text-muted">{{ line.product.category.name }}</div>
+                    </div>
+                  </div>
+                </td>
+                <td class="text-end">{{ line.unit_price }} ₽</td>
+                <td class="text-end">{{ line.quantity }}</td>
+                <td class="text-end fw-semibold">{{ line.total_price }} ₽</td>
+                <td class="text-end">
+                  <form method="post" action="{% url 'cart_remove' line.product.id %}">
+                    {% csrf_token %}
+                    <button class="btn btn-sm btn-outline-danger" type="submit">Удалить</button>
+                  </form>
+                </td>
+              </tr>
+            {% endfor %}
+          </tbody>
+          <tfoot>
+            <tr>
+              <th colspan="3" class="text-end">Итого:</th>
+              <th class="text-end">{{ total }} ₽</th>
+              <th></th>
+            </tr>
+          </tfoot>
+        </table>
+      </div>
+    </div>
+
+    <div class="d-flex justify-content-end mt-3">
+      <a class="btn btn-primary btn-lg" href="{% url 'checkout' %}">Оформить заказ</a>
+    </div>
+  {% else %}
+    <div class="alert alert-info">Корзина пустая</div>
+  {% endif %}
+{% endblock %}
+

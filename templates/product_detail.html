@@ -1,0 +1,51 @@
+{% extends 'base.html' %}
+{% block title %}{{ product.name }}{% endblock %}
+
+{% block content %}
+  <div class="row g-4">
+    <div class="col-12 col-lg-5">
+      <div class="card shadow-sm">
+        {% if product.image %}
+          <img class="card-img-top" src="{{ product.image.url }}" alt="{{ product.name }}" />
+        {% else %}
+          <div class="p-5 text-center text-muted">Нет изображения</div>
+        {% endif %}
+      </div>
+    </div>
+    <div class="col-12 col-lg-7">
+      <div class="d-flex justify-content-between align-items-start gap-3">
+        <div>
+          <div class="text-muted mb-1">{{ product.category.name }}</div>
+          <h1 class="h3 mb-3">{{ product.name }}</h1>
+        </div>
+        <a class="btn btn-outline-secondary" href="{% url 'index' %}">Назад</a>
+      </div>
+
+      {% if product.description %}
+        <p class="text-body-secondary">{{ product.description }}</p>
+      {% endif %}
+
+      {% if user.is_authenticated and product.author_id == user.id %}
+        <div class="d-flex gap-2 mb-3">
+          <a class="btn btn-outline-primary" href="{% url 'product_edit' product.slug %}">Редактировать</a>
+          <a class="btn btn-outline-danger" href="{% url 'product_delete' product.slug %}">Удалить</a>
+        </div>
+      {% endif %}
+
+      <div class="card shadow-sm">
+        <div class="card-body">
+          <div class="d-flex justify-content-between align-items-center">
+            <div class="fs-4 fw-bold">{{ product.price }} ₽</div>
+            <form method="post" action="{% url 'cart_add' product.id %}" class="d-flex gap-2 align-items-center">
+              {% csrf_token %}
+              <input type="number" name="quantity" value="1" min="1" class="form-control" style="width: 110px" />
+              <button class="btn btn-primary" type="submit">Добавить в корзину</button>
+            </form>
+          </div>
+          <div class="text-muted mt-2">Сумма в корзине: {{ cart_total }} ₽</div>
+        </div>
+      </div>
+    </div>
+  </div>
+{% endblock %}
+

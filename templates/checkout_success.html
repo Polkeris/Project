@@ -1,0 +1,13 @@
+{% extends 'base.html' %}
+{% block title %}Заказ оформлен{% endblock %}
+
+{% block content %}
+  <div class="card shadow-sm">
+    <div class="card-body">
+      <h1 class="h3">Спасибо!</h1>
+      <p class="mb-3">Ваш заказ <span class="fw-semibold">#{{ order.id }}</span> создан.</p>
+      <a class="btn btn-primary" href="{% url 'index' %}">На главную</a>
+    </div>
+  </div>
+{% endblock %}
+
