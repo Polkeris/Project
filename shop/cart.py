@@ -61,7 +61,7 @@ def cart_clear(request: HttpRequest) -> None:
 def cart_lines(request: HttpRequest) -> list[CartLine]:
     cart = _get_session_cart(request)
     product_ids: list[int] = [int(k) for k in cart.keys()]
-    products = Product.objects.filter(id__in=product_ids, is_active=True)
+    products = Product.objects.filter(id__in=product_ids)
     product_map = {p.id: p for p in products}
 
     lines: list[CartLine] = []

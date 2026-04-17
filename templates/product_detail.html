@@ -27,8 +27,8 @@
 
       {% if user.is_authenticated and product.author_id == user.id %}
         <div class="d-flex gap-2 mb-3">
-          <a class="btn btn-outline-primary" href="{% url 'product_edit' product.slug %}">Редактировать</a>
-          <a class="btn btn-outline-danger" href="{% url 'product_delete' product.slug %}">Удалить</a>
+          <a class="btn btn-outline-primary" href="{% url 'product_edit' product.id %}">Редактировать</a>
+          <a class="btn btn-outline-danger" href="{% url 'product_delete' product.id %}">Удалить</a>
         </div>
       {% endif %}
 

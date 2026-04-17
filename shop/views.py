@@ -18,9 +18,7 @@ from shop.models import Category, Order, OrderItem, Product
 @beartype
 def index(request: HttpRequest) -> HttpResponse:
     categories: QuerySet[Category] = Category.objects.all()
-    products: QuerySet[Product] = Product.objects.filter(is_active=True).select_related(
-        "category"
-    )
+    products: QuerySet[Product] = Product.objects.all().select_related("category")
 
     category_slug = request.GET.get("category")
     if category_slug:
@@ -36,11 +34,10 @@ def index(request: HttpRequest) -> HttpResponse:
 
 
 @beartype
-def product_detail(request: HttpRequest, slug: str) -> HttpResponse:
+def product_detail(request: HttpRequest, product_id: int) -> HttpResponse:
     product = get_object_or_404(
         Product.objects.select_related("category"),
-        slug=slug,
-        is_active=True,
+        id=product_id,
     )
     context = {"product": product, "cart_total": cart_total(request)}
     return render(request, "product_detail.html", context)
@@ -78,25 +75,21 @@ class ProductCreateView(LoginRequiredMixin, CreateView):
         return super().form_valid(form)
 
     def get_success_url(self) -> str:
-        return reverse("product_detail", kwargs={"slug": self.object.slug})
+        return reverse("product_detail", kwargs={"product_id": self.object.id})
 
 
 class ProductUpdateView(ProductOwnerMixin, UpdateView):
     model = Product
     form_class = ProductForm
     template_name = "product_form.html"
-    slug_field = "slug"
-    slug_url_kwarg = "slug"
 
     def get_success_url(self) -> str:
-        return reverse("product_detail", kwargs={"slug": self.object.slug})
+        return reverse("product_detail", kwargs={"product_id": self.object.id})
 
 
 class ProductDeleteView(ProductOwnerMixin, DeleteView):
     model = Product
     template_name = "product_confirm_delete.html"
-    slug_field = "slug"
-    slug_url_kwarg = "slug"
 
     def get_success_url(self) -> str:
         return reverse("index")
@@ -110,7 +103,7 @@ def cart_detail(request: HttpRequest) -> HttpResponse:
 
 @beartype
 def cart_add_view(request: HttpRequest, product_id: int) -> HttpResponse:
-    product = get_object_or_404(Product, id=product_id, is_active=True)
+    product = get_object_or_404(Product, id=product_id)
     quantity = as_int(request.POST.get("quantity", "1"), default=1)
     if quantity <= 0:
         quantity = 1

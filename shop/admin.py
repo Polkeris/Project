@@ -12,11 +12,10 @@ class CategoryAdmin(admin.ModelAdmin):
 
 @admin.register(Product)
 class ProductAdmin(admin.ModelAdmin):
-    list_display = ["name", "author", "category", "price", "is_active", "created_at"]
-    list_filter = ["category", "is_active"]
+    list_display = ["name", "author", "category", "price", "created_at"]
+    list_filter = ["category"]
     list_select_related = ["category"]
-    prepopulated_fields = {"slug": ("name",)}
-    search_fields = ["name", "slug", "description"]
+    search_fields = ["name", "description"]
 
 
 class OrderItemInline(admin.TabularInline):

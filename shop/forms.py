@@ -11,12 +11,12 @@ from shop.models import Product
 class CheckoutForm(forms.Form):
     first_name = forms.CharField(label="Имя", max_length=100)
     last_name = forms.CharField(label="Фамилия", max_length=100)
-    email = forms.EmailField(label="Email")
+    email = forms.EmailField(label="Эл. почта")
     address = forms.CharField(label="Адрес", widget=forms.Textarea(attrs={"rows": 3}))
 
 
 class SignUpForm(UserCreationForm):
-    email = forms.EmailField(label="Email", required=True)
+    email = forms.EmailField(label="Эл. почта", required=True)
 
     class Meta(UserCreationForm.Meta):
         model = User
@@ -29,11 +29,9 @@ class ProductForm(forms.ModelForm):
         fields = (
             "category",
             "name",
-            "slug",
             "description",
             "price",
             "image",
-            "is_active",
         )
 
 
