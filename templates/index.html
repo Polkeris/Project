@@ -55,7 +55,7 @@
                       {% csrf_token %}
                       <input type="hidden" name="quantity" value="1" />
                       <input type="hidden" name="next" value="{{ request.get_full_path }}" />
-                      <button class="btn btn-primary" type="submit">В корзину</button>
+                      <button class="btn btn-primary text-nowrap" style="white-space: nowrap;" type="submit">В корзину</button>
                     </form>
                   </div>
                 </div>
