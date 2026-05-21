@@ -5,8 +5,41 @@
   <div class="row g-4">
     <div class="col-12 col-lg-5">
       <div class="card shadow-sm">
-        {% if product.image %}
-          <img class="card-img-top" src="{{ product.image.url }}" alt="{{ product.name }}" />
+        {% if product.images.all %}
+          <div id="productCarousel" class="carousel slide" data-bs-ride="carousel">
+            <div class="carousel-inner">
+              {% for photo in product.images.all %}
+                <div class="carousel-item {% if forloop.first %}active{% endif %}">
+                  <img class="card-img-top product-gallery-main" src="{{ photo.image.url }}" alt="{{ product.name }}" />
+                </div>
+              {% endfor %}
+            </div>
+            {% if product.images.count > 1 %}
+              <button class="carousel-control-prev" type="button" data-bs-target="#productCarousel" data-bs-slide="prev">
+                <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+                <span class="visually-hidden">Назад</span>
+              </button>
+              <button class="carousel-control-next" type="button" data-bs-target="#productCarousel" data-bs-slide="next">
+                <span class="carousel-control-next-icon" aria-hidden="true"></span>
+                <span class="visually-hidden">Вперёд</span>
+              </button>
+            {% endif %}
+          </div>
+          {% if product.images.count > 1 %}
+            <div class="d-flex flex-wrap gap-2 p-3 border-top">
+              {% for photo in product.images.all %}
+                <img
+                  class="thumb product-gallery-thumb {% if forloop.first %}active{% endif %}"
+                  src="{{ photo.image.url }}"
+                  alt="Миниатюра {{ forloop.counter }}"
+                  data-bs-target="#productCarousel"
+                  data-bs-slide-to="{{ forloop.counter0 }}"
+                />
+              {% endfor %}
+            </div>
+          {% endif %}
+        {% elif product.cover %}
+          <img class="card-img-top product-gallery-main" src="{{ product.cover.url }}" alt="{{ product.name }}" />
         {% else %}
           <div class="p-5 text-center text-muted">Нет изображения</div>
         {% endif %}
@@ -48,4 +81,3 @@
     </div>
   </div>
 {% endblock %}
-

@@ -4,7 +4,7 @@ from beartype import beartype
 from django.contrib.auth import login
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
-from django.db.models import QuerySet
+from django.db.models import Prefetch, Q, QuerySet
 from django.http import HttpRequest, HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
@@ -13,12 +13,15 @@ from django.views.generic import CreateView, DeleteView, UpdateView
 from shop.cart import cart_add, cart_clear, cart_lines, cart_remove, cart_total
 from shop.forms import CheckoutForm, ProductForm, SignUpForm, as_int
 from shop.models import Category, Order, OrderItem, Product
+from shop.product_images import delete_product_images, save_product_images
 
 
 @beartype
 def index(request: HttpRequest) -> HttpResponse:
     categories: QuerySet[Category] = Category.objects.all()
-    products: QuerySet[Product] = Product.objects.all().select_related("category")
+    products: QuerySet[Product] = (
+        Product.objects.all().select_related("category").prefetch_related("images")
+    )
 
     category_slug = request.GET.get("category")
     if category_slug:
@@ -36,7 +39,7 @@ def index(request: HttpRequest) -> HttpResponse:
 @beartype
 def product_detail(request: HttpRequest, product_id: int) -> HttpResponse:
     product = get_object_or_404(
-        Product.objects.select_related("category"),
+        Product.objects.select_related("category").prefetch_related("images"),
         id=product_id,
     )
     context = {"product": product, "cart_total": cart_total(request)}
@@ -65,23 +68,44 @@ class ProductOwnerMixin(LoginRequiredMixin, UserPassesTestMixin):
         return getattr(obj, "author_id", None) == self.request.user.id
 
 
-class ProductCreateView(LoginRequiredMixin, CreateView):
+class ProductImageFormMixin:
+    def _handle_product_images(self, product: Product) -> None:
+        delete_ids = [
+            int(pk)
+            for pk in self.request.POST.getlist("delete_images")
+            if pk.isdigit()
+        ]
+        delete_product_images(product, delete_ids)
+        save_product_images(product, self.request.FILES.getlist("images"))
+
+
+class ProductCreateView(ProductImageFormMixin, LoginRequiredMixin, CreateView):
     model = Product
     form_class = ProductForm
     template_name = "product_form.html"
 
     def form_valid(self, form: ProductForm) -> HttpResponse:
         form.instance.author = self.request.user
-        return super().form_valid(form)
+        response = super().form_valid(form)
+        self._handle_product_images(self.object)
+        return response
 
     def get_success_url(self) -> str:
         return reverse("product_detail", kwargs={"product_id": self.object.id})
 
 
-class ProductUpdateView(ProductOwnerMixin, UpdateView):
+class ProductUpdateView(ProductImageFormMixin, ProductOwnerMixin, UpdateView):
     model = Product
     form_class = ProductForm
     template_name = "product_form.html"
+
+    def get_queryset(self) -> QuerySet[Product]:
+        return super().get_queryset().prefetch_related("images")
+
+    def form_valid(self, form: ProductForm) -> HttpResponse:
+        response = super().form_valid(form)
+        self._handle_product_images(self.object)
+        return response
 
     def get_success_url(self) -> str:
         return reverse("product_detail", kwargs={"product_id": self.object.id})
@@ -131,6 +155,7 @@ def checkout(request: HttpRequest) -> HttpResponse:
         form = CheckoutForm(request.POST)
         if form.is_valid():
             order = Order.objects.create(
+                user=request.user if request.user.is_authenticated else None,
                 first_name=form.cleaned_data["first_name"],
                 last_name=form.cleaned_data["last_name"],
                 email=form.cleaned_data["email"],
@@ -150,7 +175,10 @@ def checkout(request: HttpRequest) -> HttpResponse:
             cart_clear(request)
             return redirect(reverse("checkout_success", kwargs={"order_id": order.id}))
     else:
-        form = CheckoutForm()
+        initial: dict[str, str] = {}
+        if request.user.is_authenticated:
+            initial["email"] = request.user.email
+        form = CheckoutForm(initial=initial)
 
     context = {"form": form, "lines": lines, "total": cart_total(request)}
     return render(request, "checkout.html", context)
@@ -161,3 +189,34 @@ def checkout_success(request: HttpRequest, order_id: int) -> HttpResponse:
     order = get_object_or_404(Order, id=order_id)
     context = {"order": order}
     return render(request, "checkout_success.html", context)
+
+
+@beartype
+def _user_orders(user) -> QuerySet[Order]:
+    return (
+        Order.objects.filter(Q(user=user) | Q(email=user.email))
+        .distinct()
+        .prefetch_related(
+            Prefetch(
+                "items",
+                queryset=OrderItem.objects.select_related("product"),
+            )
+        )
+    )
+
+
+@login_required
+def order_list(request: HttpRequest) -> HttpResponse:
+    orders = _user_orders(request.user)
+    context = {"orders": orders}
+    return render(request, "order_list.html", context)
+
+
+@login_required
+def order_detail(request: HttpRequest, order_id: int) -> HttpResponse:
+    order = get_object_or_404(
+        _user_orders(request.user),
+        id=order_id,
+    )
+    context = {"order": order}
+    return render(request, "order_detail.html", context)

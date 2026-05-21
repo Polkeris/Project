@@ -1,0 +1,36 @@
+{% extends 'base.html' %}
+{% block title %}Мои заказы{% endblock %}
+
+{% block content %}
+  <div class="d-flex justify-content-between align-items-center mb-3">
+    <h1 class="h3 mb-0">Мои заказы</h1>
+    <a class="btn btn-outline-secondary" href="{% url 'index' %}">В каталог</a>
+  </div>
+
+  {% if orders %}
+    <div class="list-group shadow-sm">
+      {% for order in orders %}
+        <a
+          class="list-group-item list-group-item-action d-flex justify-content-between align-items-center gap-3"
+          href="{% url 'order_detail' order.id %}"
+        >
+          <div>
+            <div class="fw-semibold">Заказ #{{ order.id }}</div>
+            <div class="text-muted small">
+              {{ order.created_at|date:"d.m.Y H:i" }} · {{ order.items.count }}
+              {% if order.items.count == 1 %}позиция{% elif order.items.count < 5 %}позиции{% else %}позиций{% endif %}
+            </div>
+          </div>
+          <div class="text-end">
+            <div class="fw-bold">{{ order.total }} ₽</div>
+            <div class="text-muted small">{{ order.first_name }} {{ order.last_name }}</div>
+          </div>
+        </a>
+      {% endfor %}
+    </div>
+  {% else %}
+    <div class="alert alert-info mb-0">
+      У вас пока нет заказов. Добавьте товары в корзину и оформите покупку.
+    </div>
+  {% endif %}
+{% endblock %}

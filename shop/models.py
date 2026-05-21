@@ -44,8 +44,44 @@ class Product(models.Model):
     def __str__(self) -> str:
         return self.name
 
+    @property
+    def cover(self):
+        first = self.images.first()
+        if first:
+            return first.image
+        if self.image:
+            return self.image
+        return None
+
+
+class ProductImage(models.Model):
+    product = models.ForeignKey(
+        Product,
+        on_delete=models.CASCADE,
+        related_name="images",
+        verbose_name="Товар",
+    )
+    image = models.ImageField("Изображение", upload_to="products/")
+    position = models.PositiveSmallIntegerField("Порядок", default=0)
+
+    class Meta:
+        verbose_name = "Изображение товара"
+        verbose_name_plural = "Изображения товара"
+        ordering = ["position", "id"]
+
+    def __str__(self) -> str:
+        return f"{self.product.name} — фото #{self.pk}"
+
 
 class Order(models.Model):
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        related_name="orders",
+        null=True,
+        blank=True,
+        verbose_name="Покупатель",
+    )
     first_name = models.CharField("Имя", max_length=100)
     last_name = models.CharField("Фамилия", max_length=100)
     email = models.EmailField("Эл. почта")
@@ -59,6 +95,10 @@ class Order(models.Model):
 
     def __str__(self) -> str:
         return f"Заказ #{self.pk}"
+
+    @property
+    def total(self):
+        return sum(item.line_total for item in self.items.all())
 
 
 class OrderItem(models.Model):
@@ -77,3 +117,7 @@ class OrderItem(models.Model):
 
     def __str__(self) -> str:
         return f"{self.product} x {self.quantity}"
+
+    @property
+    def line_total(self):
+        return self.price * self.quantity

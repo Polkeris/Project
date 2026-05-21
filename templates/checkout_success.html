@@ -6,7 +6,12 @@
     <div class="card-body">
       <h1 class="h3">Спасибо!</h1>
       <p class="mb-3">Ваш заказ <span class="fw-semibold">#{{ order.id }}</span> создан.</p>
-      <a class="btn btn-primary" href="{% url 'index' %}">На главную</a>
+      <div class="d-flex flex-wrap gap-2">
+        <a class="btn btn-primary" href="{% url 'index' %}">На главную</a>
+        {% if user.is_authenticated %}
+          <a class="btn btn-outline-primary" href="{% url 'order_list' %}">Мои заказы</a>
+        {% endif %}
+      </div>
     </div>
   </div>
 {% endblock %}
